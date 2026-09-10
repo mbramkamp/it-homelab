@@ -8,8 +8,8 @@ Install Proxmox VE on a spare physical PC and establish the virtualization platf
 
 | Component | Specification |
 |---|---|
-| CPU | **USER TODO: add CPU model** |
-| RAM | **USER TODO: add installed RAM** |
+| CPU | Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz|
+| RAM | 12G |
 | Primary storage | ~223.6 GiB SATA SSD |
 | Secondary storage | ~223.6 GiB SATA SSD (currently contains an NTFS partition; not yet repurposed) |
 | Network adapter | Intel Ethernet using the `e1000e` driver |
