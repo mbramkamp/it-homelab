@@ -17,7 +17,7 @@ Install Proxmox VE on a spare physical PC and establish the virtualization platf
 
 ## Installation Media
 
-- Proxmox VE ISO version: **USER TODO: add exact version downloaded**
+- Proxmox VE ISO version: pve-manager/9.2.2/b9984c6d90a4bd80 (running kernel: 7.0.2-6-pve)
 - USB creation tool: Rufus
 - Installation date: 2026-09-10
 - Boot mode: UEFI
