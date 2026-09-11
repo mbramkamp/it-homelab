@@ -18,8 +18,7 @@ Install Proxmox VE on a spare physical PC and establish the virtualization platf
 ## Installation Media
 
 - Proxmox VE installation/version recorded during setup: `pve-manager/9.2.2/b9984c6d90a4bd80`
-- Current Proxmox VE version: 9.2.2
-- Running kernel when documented: `7.0.2-6-pve`
+- Initial kernel: `7.0.2-6-pve`
 - USB creation tool: Rufus
 - Installation date: 2026-09-10
 - Boot mode: UEFI
@@ -77,6 +76,61 @@ The host was prepared for headless operation by:
 - Configuring ASRock UEFI to automatically power the computer on after AC power is restored
 - Confirming Proxmox returns to `192.168.0.11` after reboot
 
+## Repository Configuration and Initial Updates
+
+The default Proxmox enterprise repositories require a paid subscription. Because this system is a non-production homelab, the enterprise Proxmox and Ceph repository entries were disabled and the `pve-no-subscription` repository was enabled through the Proxmox web interface.
+
+Repository connectivity was validated with:
+
+```bash
+apt update
+```
+
+APT successfully retrieved package metadata from Debian 13 (Trixie), Debian Security, and the Proxmox `pve-no-subscription` repository without repository errors. At that point, 135 installed packages had available upgrades.
+
+Before changing the host, the proposed upgrade was inspected with:
+
+```bash
+apt list --upgradable
+apt -s full-upgrade
+```
+
+The `-s` option simulated the full upgrade without making changes. After reviewing the proposed package operations, the host was upgraded with:
+
+```bash
+apt full-upgrade
+```
+
+The upgrade included Proxmox management packages, security/library updates, QEMU components, firmware, and a newer Proxmox kernel.
+
+### Post-upgrade validation
+
+Immediately after the upgrade but before rebooting:
+
+```text
+pve-manager: 9.2.18
+running kernel: 7.0.2-6-pve
+```
+
+This demonstrated that installing a new kernel does not replace the kernel currently running in memory. A reboot is required to load it.
+
+Because this host previously experienced a UEFI boot failure, the firmware boot entry was checked before rebooting:
+
+```bash
+efibootmgr
+```
+
+The result confirmed that the repaired `proxmox` UEFI entry still existed, was first in `BootOrder`, and was the entry used for the current boot.
+
+After rebooting, the host returned normally and validation showed:
+
+```text
+pve-manager/9.2.18/614bede5d65599c6
+running kernel: 7.0.14-16-pve
+```
+
+This confirmed that the package upgrade succeeded, the new kernel loaded successfully, networking returned, remote management remained available, and the repaired UEFI boot configuration survived the update/reboot cycle.
+
 ## Validation
 
 - [x] Proxmox installed successfully
@@ -88,8 +142,11 @@ The host was prepared for headless operation by:
 - [x] Both SATA SSDs are detected
 - [x] Host can operate without monitor or keyboard
 - [x] Firmware configured to power on after AC power restoration
+- [x] Package repositories configured for homelab use
+- [x] APT repository connectivity validated
+- [x] Initial full system upgrade completed
+- [x] New Proxmox kernel validated after reboot
 - [ ] DNS resolution formally tested/documented
-- [ ] Package repositories configured and updates applied
 - [ ] Secondary SSD configured for Proxmox storage
 
 ## Problems Encountered
@@ -110,6 +167,8 @@ Write this section yourself. Aim for 3-6 sentences. Some questions to answer:
 - What did you learn about UEFI/EFI booting?
 - Why shouldn't you assume `/dev/sda` always refers to the same physical disk?
 - What did you learn about static IP addressing?
+- What did you learn about Linux package repositories and `apt`?
+- Why did the running kernel remain at `7.0.2-6-pve` until the server rebooted?
 - What part of the process do you now understand better than before?
 
 **Your answer:**
@@ -118,7 +177,6 @@ TBD
 
 ## Next Steps
 
-- Configure Proxmox repositories and install updates
 - Confirm the secondary SSD can be safely erased
 - Configure secondary Proxmox storage
 - Upload operating-system ISOs
