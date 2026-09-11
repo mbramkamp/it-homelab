@@ -8,8 +8,8 @@ Install Proxmox VE on a spare physical PC and establish the virtualization platf
 
 | Component | Specification |
 |---|---|
-| CPU | Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz|
-| RAM | 12G |
+| CPU | Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz |
+| RAM | 12 GB |
 | Primary storage | ~223.6 GiB SATA SSD |
 | Secondary storage | ~223.6 GiB SATA SSD (currently contains an NTFS partition; not yet repurposed) |
 | Network adapter | Intel Ethernet using the `e1000e` driver |
@@ -17,7 +17,9 @@ Install Proxmox VE on a spare physical PC and establish the virtualization platf
 
 ## Installation Media
 
-- Proxmox VE ISO version: pve-manager/9.2.2/b9984c6d90a4bd80 (running kernel: 7.0.2-6-pve)
+- Proxmox VE installation/version recorded during setup: `pve-manager/9.2.2/b9984c6d90a4bd80`
+- Current Proxmox VE version: 9.2.2
+- Running kernel when documented: `7.0.2-6-pve`
 - USB creation tool: Rufus
 - Installation date: 2026-09-10
 - Boot mode: UEFI
