@@ -10,8 +10,8 @@ Install Proxmox VE on a spare physical PC and establish the virtualization platf
 |---|---|
 | CPU | Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz |
 | RAM | 12 GB |
-| Primary storage | ~223.6 GiB SATA SSD |
-| Secondary storage | ~223.6 GiB SATA SSD (currently contains an NTFS partition; not yet repurposed) |
+| Primary storage | ~223.6 GiB SATA SSD, serial `18060624002002` |
+| Secondary storage | ~223.6 GiB SATA SSD, serial `19061924001945` |
 | Network adapter | Intel Ethernet using the `e1000e` driver |
 | Firmware | ASRock UEFI |
 
@@ -50,20 +50,74 @@ TBD
 
 ## Storage Configuration
 
-Proxmox is installed on one of the SATA SSDs using the default LVM-based installation layout. Inspection after installation showed:
+### Proxmox system SSD
+
+Proxmox is installed on the SATA SSD with serial `18060624002002`. The installation uses an EFI System Partition plus the default LVM-based layout:
 
 ```text
-Proxmox SSD
+System SSD
 ├── EFI System Partition (~1 GiB, FAT32)
-└── LVM
-    ├── pve-root
-    ├── pve-swap
-    └── pve-data
+└── LVM PV (/dev/sdb3 when documented)
+    └── VG "pve"
+        ├── LV "root"  ~65.5 GiB
+        ├── LV "swap"    8 GiB
+        └── thin pool "data" ~129.85 GiB
+            └── exposed by Proxmox as local-lvm
 ```
 
-The second SATA SSD is visible to Proxmox but currently contains an NTFS partition. It will not be wiped or repurposed until its contents are confirmed unnecessary.
+The `pve` volume group also retained approximately 16 GiB of unallocated capacity when inspected.
 
-> Note: Linux device names such as `/dev/sda` and `/dev/sdb` changed after the SATA drives were physically rearranged. Physical disks should not be identified permanently by `sdX` names alone.
+### Secondary VM storage SSD
+
+The second SATA SSD, serial `19061924001945`, was initially identified as `/dev/sda` and contained a single NTFS filesystem labeled `Gamer Time`. Its identity was verified by model, serial number, filesystem, and contents before any destructive operation was performed.
+
+After confirming that the existing data was no longer required, the disk was wiped through **pve01 > Disks > Disks** in the Proxmox web interface. It was then configured as dedicated LVM-Thin storage named `lab-vm-storage`.
+
+The resulting storage stack is:
+
+```text
+Secondary SSD (~223.6 GiB)
+└── LVM Physical Volume (PV)
+    └── Volume Group (VG) "lab-vm-storage"
+        └── LVM thin pool "lab-vm-storage" (~218.97 GiB)
+            └── future VM and container virtual disks
+```
+
+The intent is to use this SSD primarily for lab VM/CT disks while keeping the Proxmox operating system and its existing local storage on the first SSD.
+
+LVM-Thin was selected because it provides block storage suitable for Proxmox VM disks while supporting thin provisioning and snapshots. A virtual disk's configured maximum size therefore does not necessarily consume that full amount of physical SSD capacity immediately. Actual thin-pool utilization must still be monitored because thin provisioning can overcommit physical capacity.
+
+The secondary SSD is **not a backup**. A separate backup strategy is still required for data or VM configurations that need to survive disk or host failure.
+
+> Note: Linux device names such as `/dev/sda` and `/dev/sdb` changed after the SATA drives were physically rearranged. Physical disks should not be identified permanently by `sdX` names alone; model, serial number, UUID, and storage metadata provide safer identification.
+
+### LVM validation
+
+The underlying configuration was inspected from the Proxmox shell with:
+
+```bash
+pvs
+vgs
+lvs
+```
+
+The resulting LVM hierarchy was:
+
+```text
+PV /dev/sda
+└── VG lab-vm-storage (~223.57 GiB)
+    └── thin LV lab-vm-storage (~218.97 GiB)
+        Data usage: 0.00%
+        Metadata usage: 0.74%
+
+PV /dev/sdb3
+└── VG pve (~222.00 GiB)
+    ├── LV root (~65.50 GiB)
+    ├── LV swap (8.00 GiB)
+    └── thin LV data (~129.85 GiB)
+```
+
+This validated the relationship between the physical disks, LVM physical volumes, volume groups, logical volumes, and the thin pools presented to Proxmox for VM storage.
 
 ## Headless Configuration
 
@@ -146,8 +200,10 @@ This confirmed that the package upgrade succeeded, the new kernel loaded success
 - [x] APT repository connectivity validated
 - [x] Initial full system upgrade completed
 - [x] New Proxmox kernel validated after reboot
+- [x] Secondary SSD identified by serial before destructive changes
+- [x] Secondary SSD wiped and configured as dedicated LVM-Thin storage
+- [x] LVM configuration validated with `pvs`, `vgs`, and `lvs`
 - [ ] DNS resolution formally tested/documented
-- [ ] Secondary SSD configured for Proxmox storage
 
 ## Problems Encountered
 
@@ -169,6 +225,8 @@ Write this section yourself. Aim for 3-6 sentences. Some questions to answer:
 - What did you learn about static IP addressing?
 - What did you learn about Linux package repositories and `apt`?
 - Why did the running kernel remain at `7.0.2-6-pve` until the server rebooted?
+- How would you explain a PV, VG, LV, and LVM thin pool?
+- Why does thin provisioning require capacity monitoring?
 - What part of the process do you now understand better than before?
 
 **Your answer:**
@@ -177,8 +235,7 @@ TBD
 
 ## Next Steps
 
-- Confirm the secondary SSD can be safely erased
-- Configure secondary Proxmox storage
 - Upload operating-system ISOs
 - Create VM standards
 - Deploy `DC01` as the first Windows Server VM
+- Develop a separate backup strategy for important lab workloads
